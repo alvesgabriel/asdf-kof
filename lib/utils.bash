@@ -11,12 +11,20 @@ fail() {
 	exit 1
 }
 
-curl_opts=(-fsSL)
+curl_opts=(-fSL)
 
 # NOTE: You might want to remove this if kof is not hosted on GitHub releases.
 if [ -n "${GITHUB_API_TOKEN:-}" ]; then
 	curl_opts=("${curl_opts[@]}" -H "Authorization: token $GITHUB_API_TOKEN")
 fi
+
+get_os_type() {
+	if [[ "$(uname)" == "Darwin" ]]; then
+		ostype="macos"
+	elif [[ "$(uname)" == "Linux" ]]; then
+		ostype="linux"
+	fi
+}
 
 sort_versions() {
 	sed 'h; s/[+-]/./g; s/.p\([[:digit:]]\)/.z\1/; s/$/.z/; G; s/\n/ /' |
@@ -33,12 +41,21 @@ list_all_versions() {
 	list_github_tags
 }
 
+list_os_versions() {
+    get_os_type &&
+    list_all_versions |
+    grep $ostype |
+    grep -oE "^kof-[0-9]+\.[0-9]+\.[0-9]+(-\w+)?-$ostype" |
+    grep -oE '[0-9]+\.[0-9]+\.[0-9]+' |
+    sort_versions
+}
+
 download_release() {
 	local version filename url
 	version="$1"
 	filename="$2"
 
-	url="$GH_REPO/archive/v${version}.tar.gz"
+	url="$GH_REPO/releases/download/${version}/${version}.tar.gz"
 
 	echo "* Downloading $TOOL_NAME release $version..."
 	curl "${curl_opts[@]}" -o "$filename" -C - "$url" || fail "Could not download $url"
@@ -47,7 +64,7 @@ download_release() {
 install_version() {
 	local install_type="$1"
 	local version="$2"
-	local install_path="${3%/bin}/bin"
+	local install_path="${3%/bin}"
 
 	if [ "$install_type" != "version" ]; then
 		fail "asdf-$TOOL_NAME supports release installs only"
@@ -59,7 +76,7 @@ install_version() {
 
 		local tool_cmd
 		tool_cmd="$(echo "$TOOL_TEST" | cut -d' ' -f1)"
-		test -x "$install_path/$tool_cmd" || fail "Expected $install_path/$tool_cmd to be executable."
+		test -x "$install_path/bin/$tool_cmd" || fail "Expected $install_path/$tool_cmd to be executable."
 
 		echo "$TOOL_NAME $version installation was successful!"
 	) || (
