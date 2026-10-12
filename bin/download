@@ -10,8 +10,8 @@ source "${plugin_dir}/lib/utils.bash"
 
 mkdir -p "$ASDF_DOWNLOAD_PATH"
 
-get_os_type
-install_version_name=$(list_all_versions | grep -E "$ASDF_INSTALL_VERSION(-\w+)?-$ostype")
+get_platform
+install_version_name=$(list_all_versions | grep -E "$ASDF_INSTALL_VERSION(-\w+)?-$PLATFORM")
 release_file="$ASDF_DOWNLOAD_PATH/$TOOL_NAME-$ASDF_INSTALL_VERSION.tar.gz"
 
 # Download tar.gz file to the download directory

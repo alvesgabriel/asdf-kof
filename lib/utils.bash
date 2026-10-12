@@ -18,12 +18,17 @@ if [ -n "${GITHUB_API_TOKEN:-}" ]; then
 	curl_opts=("${curl_opts[@]}" -H "Authorization: token $GITHUB_API_TOKEN")
 fi
 
-get_os_type() {
+get_platform() {
+	local os arch
 	if [[ "$(uname)" == "Darwin" ]]; then
-		ostype="macos"
+		os="macos"
 	elif [[ "$(uname)" == "Linux" ]]; then
-		ostype="linux"
+		os="linux"
 	fi
+
+	arch="$(uname -m)"
+
+	PLATFORM="$os-$arch"
 }
 
 sort_versions() {
@@ -42,12 +47,12 @@ list_all_versions() {
 }
 
 list_os_versions() {
-    get_os_type &&
-    list_all_versions |
-    grep $ostype |
-    grep -oE "^kof-[0-9]+\.[0-9]+\.[0-9]+(-\w+)?-$ostype" |
-    grep -oE '[0-9]+\.[0-9]+\.[0-9]+' |
-    sort_versions
+	get_platform
+	list_all_versions |
+		grep "$PLATFORM" |
+		grep -oE "^kof-[0-9]+\.[0-9]+\.[0-9]+(-\w+)?-$PLATFORM" |
+		grep -oE '[0-9]+\.[0-9]+\.[0-9]+' |
+		sort_versions
 }
 
 download_release() {
